@@ -18,6 +18,10 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: integration-test-runner/go.mod
+          cache: true
+          cache-dependency-path: |
+            integration-test-runner/go.sum
+            integration-test-runner/go.mod
 
       - name: Setup Helm
         uses: azure/setup-helm@v5
