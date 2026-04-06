@@ -20,8 +20,6 @@ integration-test-runner
 │   └── install.go
 ├── logging
 │   └── logger.go
-├── testrun
-│   └── execute.go
 ├── workspace
 │   └── root.go
 ├── go.mod
