@@ -33,7 +33,8 @@ integration-test-runner
 From repo root:
 
 ```bash
-go run ./integration-test-runner
+cd integration-test-runner
+go run .
 ```
 
 Or from inside integration-test-runner:
