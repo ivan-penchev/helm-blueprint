@@ -1,0 +1,8 @@
+{{- range $name, $role := .Values.rbac.roles }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+{{ include "helm-blueprint.metadata" (dict "name" (printf "%s-%s" (include "helm-blueprint.fullname" $) $name) "context" $ "extraAnnotations" $role.annotations "extraLabels" $role.labels "syncWaveDefault" "-3" "syncWave" $role.syncWave) }}
+rules:
+  {{- toYaml $role.rules | nindent 2 }}
+{{- end }}

@@ -1,0 +1,30 @@
+{{- if ne .Values.workloadType "StatefulSet" }}
+{{- range $name, $config := .Values.persistence }}
+{{- if not $config.existingClaim }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+{{ include "helm-blueprint.metadata" (dict "name" (printf "%s-%s" (include "helm-blueprint.fullname" $) $name) "context" $ "extraAnnotations" $config.annotations "extraLabels" $config.labels "syncWaveDefault" "-2" "syncWave" $config.syncWave) }}
+spec:
+  accessModes:
+    - {{ default "ReadWriteOnce" $config.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ default "1Gi" $config.size }}
+  {{- if $config.storageClass }}
+  {{- if eq $config.storageClass "-" }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ $config.storageClass | quote }}
+  {{- end }}
+  {{- end }}
+  {{- with $config.volumeName }}
+  volumeName: {{ . | quote }}
+  {{- end }}
+  {{- with $config.selector }}
+  selector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

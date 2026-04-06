@@ -1,0 +1,26 @@
+apiVersion: v2
+name: helm-blueprint
+description: A universal Helm chart for deploying any Kubernetes application workload
+type: application
+version: 0.0.1
+appVersion: "1.0.0"
+kubeVersion: ">=1.28.0-0"
+keywords:
+  - universal
+  - deployment
+  - statefulset
+  - cronjob
+  - daemonset
+  - argo-rollouts
+home: https://github.com/ivan-penchev/helm-blueprint
+sources:
+  - https://github.com/ivan-penchev/helm-blueprint
+maintainers:
+  - name: ivan-penchev
+annotations:
+  artifacthub.io/license: MIT License
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://github.com/ivan-penchev/helm-blueprint/tree/main/docs
+    - name: Source
+      url: https://github.com/ivan-penchev/helm-blueprint

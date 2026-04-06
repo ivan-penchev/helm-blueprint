@@ -1,0 +1,66 @@
+{{- $fullName := include "helm-blueprint.fullname" . -}}
+{{- range $name, $route := .Values.networking.gatewayApi.routes }}
+{{- if $route }}
+{{- $kind := default "HTTPRoute" $route.kind -}}
+{{- $routeName := printf "%s-%s" $fullName $name -}}
+
+{{- /* Resolve apiVersion from kind */ -}}
+{{- $apiVersion := "" -}}
+{{- if or (eq $kind "HTTPRoute") (eq $kind "GRPCRoute") (eq $kind "TLSRoute") -}}
+  {{- $apiVersion = "gateway.networking.k8s.io/v1" -}}
+{{- else if or (eq $kind "TCPRoute") (eq $kind "UDPRoute") -}}
+  {{- $apiVersion = "gateway.networking.k8s.io/v1alpha2" -}}
+{{- else -}}
+  {{- fail (printf "gatewayApi.routes.%s: invalid kind %q. Must be HTTPRoute, GRPCRoute, TLSRoute, TCPRoute, or UDPRoute" $name $kind) -}}
+{{- end }}
+---
+apiVersion: {{ $apiVersion }}
+kind: {{ $kind }}
+{{ include "helm-blueprint.metadata" (dict "name" $routeName "context" $ "extraAnnotations" $route.annotations "extraLabels" $route.labels "syncWaveDefault" "2" "syncWave" $route.syncWave) }}
+spec:
+  parentRefs:
+    {{- range $route.parentRefs }}
+    - name: {{ .name }}
+      {{- with .namespace }}
+      namespace: {{ . }}
+      {{- end }}
+      {{- with .sectionName }}
+      sectionName: {{ . }}
+      {{- end }}
+      {{- with .port }}
+      port: {{ . }}
+      {{- end }}
+    {{- end }}
+  {{- with $route.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range $route.rules }}
+    {{- $refs := list -}}
+    {{- if .backendRefs -}}
+      {{- range .backendRefs -}}
+        {{- $ref := dict "name" (printf "%s-%s" $fullName .name) "port" .port -}}
+        {{- if .weight }}{{ $ref = merge $ref (dict "weight" .weight) }}{{ end -}}
+        {{- $refs = append $refs $ref -}}
+      {{- end -}}
+    {{- end }}
+    - {{- with .matches }}
+      matches:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .filters }}
+      filters:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .timeouts }}
+      timeouts:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $refs }}
+      backendRefs:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

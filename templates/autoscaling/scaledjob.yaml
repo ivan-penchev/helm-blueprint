@@ -1,0 +1,31 @@
+{{- if and .Values.autoscaling.keda.enabled (eq .Values.workloadType "Job") }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+{{ include "helm-blueprint.metadata" (dict "context" $ "extraAnnotations" .Values.autoscaling.keda.annotations "extraLabels" .Values.autoscaling.keda.labels "syncWaveDefault" "0") }}
+spec:
+  jobTargetRef:
+    {{- include "helm-blueprint.workloads.jobSpec" . | nindent 4 }}
+    template:
+      {{- include "helm-blueprint.podTemplate" . | nindent 6 }}
+  {{- with .Values.autoscaling.keda.pollingInterval }}
+  pollingInterval: {{ . }}
+  {{- end }}
+  {{- with .Values.autoscaling.keda.minReplicaCount }}
+  minReplicaCount: {{ . }}
+  {{- end }}
+  {{- with .Values.autoscaling.keda.maxReplicaCount }}
+  maxReplicaCount: {{ . }}
+  {{- end }}
+  {{- with .Values.autoscaling.keda.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.autoscaling.keda.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.autoscaling.keda.scalingStrategy }}
+  scalingStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  triggers:
+    {{- toYaml .Values.autoscaling.keda.triggers | nindent 4 }}
+{{- end }}

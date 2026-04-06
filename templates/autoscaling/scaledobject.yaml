@@ -1,0 +1,31 @@
+{{- if and .Values.autoscaling.keda.enabled (ne .Values.workloadType "Job") }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+{{ include "helm-blueprint.metadata" (dict "context" $ "extraAnnotations" .Values.autoscaling.keda.annotations "extraLabels" .Values.autoscaling.keda.labels "syncWaveDefault" "0") }}
+spec:
+  scaleTargetRef:
+    apiVersion: {{ if eq .Values.workloadType "Rollout" }}argoproj.io/v1alpha1{{ else }}apps/v1{{ end }}
+    kind: {{ .Values.workloadType }}
+    name: {{ include "helm-blueprint.fullname" . }}
+  {{- with .Values.autoscaling.keda.pollingInterval }}
+  pollingInterval: {{ . }}
+  {{- end }}
+  {{- with .Values.autoscaling.keda.cooldownPeriod }}
+  cooldownPeriod: {{ . }}
+  {{- end }}
+  {{- if or (kindIs "int64" .Values.autoscaling.keda.idleReplicaCount) (kindIs "float64" .Values.autoscaling.keda.idleReplicaCount) }}
+  idleReplicaCount: {{ .Values.autoscaling.keda.idleReplicaCount }}
+  {{- end }}
+  minReplicaCount: {{ if kindIs "invalid" .Values.autoscaling.keda.minReplicaCount }}1{{ else }}{{ .Values.autoscaling.keda.minReplicaCount }}{{ end }}
+  maxReplicaCount: {{ if kindIs "invalid" .Values.autoscaling.keda.maxReplicaCount }}10{{ else }}{{ .Values.autoscaling.keda.maxReplicaCount }}{{ end }}
+  {{- with .Values.autoscaling.keda.fallback }}
+  fallback:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.autoscaling.keda.advanced }}
+  advanced:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  triggers:
+    {{- toYaml .Values.autoscaling.keda.triggers | nindent 4 }}
+{{- end }}

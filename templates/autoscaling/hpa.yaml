@@ -1,0 +1,22 @@
+{{- if .Values.autoscaling.hpa.enabled }}
+{{- if not (or (eq .Values.workloadType "CronJob") (eq .Values.workloadType "Job") (eq .Values.workloadType "DaemonSet")) }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+{{ include "helm-blueprint.metadata" (dict "context" $ "extraAnnotations" .Values.autoscaling.hpa.annotations "extraLabels" .Values.autoscaling.hpa.labels "syncWaveDefault" "0") }}
+spec:
+  scaleTargetRef:
+    apiVersion: {{ if eq .Values.workloadType "Rollout" }}argoproj.io/v1alpha1{{ else }}apps/v1{{ end }}
+    kind: {{ .Values.workloadType }}
+    name: {{ include "helm-blueprint.fullname" . }}
+  minReplicas: {{ if kindIs "invalid" .Values.autoscaling.hpa.minReplicas }}1{{ else }}{{ .Values.autoscaling.hpa.minReplicas }}{{ end }}
+  maxReplicas: {{ if kindIs "invalid" .Values.autoscaling.hpa.maxReplicas }}10{{ else }}{{ .Values.autoscaling.hpa.maxReplicas }}{{ end }}
+  {{- with .Values.autoscaling.hpa.metrics }}
+  metrics:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.autoscaling.hpa.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- end }}

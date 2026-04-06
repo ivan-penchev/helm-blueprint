@@ -1,0 +1,55 @@
+{{- $fullName := include "helm-blueprint.fullname" . -}}
+{{- range $name, $hook := .Values.hooks }}
+{{- if $hook }}
+{{- /* Build Helm hook annotations */ -}}
+{{- $hookAnnotations := dict -}}
+{{- $_ := set $hookAnnotations "helm.sh/hook" ($hook.events | join ",") -}}
+{{- $_ := set $hookAnnotations "helm.sh/hook-weight" (default "0" $hook.weight | toString) -}}
+{{- $_ := set $hookAnnotations "helm.sh/hook-delete-policy" (default "before-hook-creation" $hook.deletePolicy) -}}
+
+{{- /* Build Argo CD hook annotations */ -}}
+{{- $argoEvent := include "helm-blueprint.hooks.argoEvent" $hook.events -}}
+{{- if $argoEvent -}}
+  {{- $_ := set $hookAnnotations "argocd.argoproj.io/hook" $argoEvent -}}
+  {{- $argoDeletePolicy := include "helm-blueprint.hooks.argoDeletePolicy" (default "before-hook-creation" $hook.deletePolicy) -}}
+  {{- if $argoDeletePolicy -}}
+    {{- $_ := set $hookAnnotations "argocd.argoproj.io/hook-delete-policy" $argoDeletePolicy -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* Merge hook annotations with user annotations */ -}}
+{{- $allAnnotations := merge (default (dict) $hook.annotations) $hookAnnotations -}}
+
+{{- /* Build a hook-specific context with overridden values (no mutation of $.Values) */ -}}
+{{- $hookNetworking := deepCopy $.Values.networking -}}
+{{- $hookValues := deepCopy $.Values -}}
+{{- $_ := set $hookValues "containers" $hook.containers -}}
+{{- $_ := set $hookValues "initContainers" (default (dict) $hook.initContainers) -}}
+{{- $_ := set $hookValues "workloadType" "Job" -}}
+{{- $_ := set $hookValues "networking" $hookNetworking -}}
+{{- $hookCtx := deepCopy $ -}}
+{{- $_ := set $hookCtx "Values" $hookValues -}}
+---
+apiVersion: batch/v1
+kind: Job
+{{ include "helm-blueprint.metadata" (dict "name" (printf "%s-hook-%s" $fullName $name) "context" $hookCtx "extraAnnotations" $allAnnotations "extraLabels" $hook.labels) }}
+spec:
+  {{- with $hook.backoffLimit }}
+  backoffLimit: {{ . }}
+  {{- end }}
+  {{- with $hook.activeDeadlineSeconds }}
+  activeDeadlineSeconds: {{ . }}
+  {{- end }}
+  {{- with $hook.ttlSecondsAfterFinished }}
+  ttlSecondsAfterFinished: {{ . }}
+  {{- end }}
+  {{- with $hook.completions }}
+  completions: {{ . }}
+  {{- end }}
+  {{- with $hook.parallelism }}
+  parallelism: {{ . }}
+  {{- end }}
+  template:
+    {{- include "helm-blueprint.podTemplate" $hookCtx | nindent 4 }}
+{{ end }}
+{{- end }}

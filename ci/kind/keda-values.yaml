@@ -1,0 +1,31 @@
+workloadType: Deployment
+containers:
+  app:
+    image:
+      repository: nginx
+      tag: "1.27"
+    ports:
+      http:
+        port: 80
+networking:
+  services:
+    http:
+      type: ClusterIP
+      ports:
+        http:
+          port: 80
+workloads:
+  deployment:
+    replicaCount: 1
+autoscaling:
+  keda:
+    enabled: true
+    minReplicaCount: 1
+    maxReplicaCount: 5
+    triggers:
+      - type: cron
+        metadata:
+          timezone: UTC
+          start: "0 0 * * *"
+          end: "0 23 * * *"
+          desiredReplicas: "2"

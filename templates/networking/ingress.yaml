@@ -1,0 +1,57 @@
+{{- $fullName := include "helm-blueprint.fullname" . -}}
+{{- /* Resolve default service name: first enabled service in the map */ -}}
+{{- $defaultSvcName := "" -}}
+{{- $defaultSvcPort := 80 -}}
+{{- range $name, $svc := .Values.networking.services -}}
+{{- if and $svc (not $defaultSvcName) -}}
+{{- $defaultSvcName = printf "%s-%s" $fullName $name -}}
+{{- range $portName, $portCfg := $svc.ports -}}
+{{- $defaultSvcPort = $portCfg.port -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- range $name, $ing := .Values.networking.ingresses }}
+{{- if $ing }}
+
+{{- $backendSvcName := $defaultSvcName -}}
+{{- $backendSvcPort := $defaultSvcPort -}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+{{ include "helm-blueprint.metadata" (dict "name" (printf "%s-%s" $fullName $name) "context" $ "extraAnnotations" $ing.annotations "extraLabels" $ing.labels "syncWaveDefault" "2" "syncWave" $ing.syncWave) }}
+spec:
+  {{- with $ing.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if $ing.tls }}
+  tls:
+    {{- range $ing.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  {{- with $ing.defaultBackend }}
+  defaultBackend:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range $ing.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ default "Prefix" .pathType }}
+            backend:
+              service:
+                name: {{ default $backendSvcName .serviceName }}
+                port:
+                  number: {{ default $backendSvcPort .servicePort }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
