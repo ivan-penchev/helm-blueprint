@@ -1,0 +1,41 @@
+{{- if eq .Values.workloadType "StatefulSet" }}
+apiVersion: apps/v1
+kind: StatefulSet
+{{ include "helm-blueprint.metadata" (dict "context" $ "workload" true "syncWaveDefault" "0") }}
+spec:
+  {{- if not (or .Values.autoscaling.hpa.enabled .Values.autoscaling.keda.enabled) }}
+  replicas: {{ if kindIs "invalid" .Values.workloads.statefulSet.replicaCount }}1{{ else }}{{ .Values.workloads.statefulSet.replicaCount }}{{ end }}
+  {{- end }}
+  serviceName: {{ include "helm-blueprint.networking.headlessServiceName" . }}
+  {{- with .Values.workloads.statefulSet.podManagementPolicy }}
+  podManagementPolicy: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.statefulSet.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.workloads.statefulSet.minReadySeconds }}
+  minReadySeconds: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.statefulSet.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.statefulSet.ordinals }}
+  ordinals:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.workloads.statefulSet.persistentVolumeClaimRetentionPolicy }}
+  persistentVolumeClaimRetentionPolicy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm-blueprint.selectorLabels" . | nindent 6 }}
+  template:
+    {{- include "helm-blueprint.podTemplate" . | nindent 4 }}
+  {{- $vcts := include "helm-blueprint.persistence.volumeClaimTemplates" . }}
+  {{- if $vcts }}
+  volumeClaimTemplates:
+    {{- $vcts | nindent 4 }}
+  {{- end }}
+{{- end }}

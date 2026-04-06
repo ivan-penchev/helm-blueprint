@@ -1,0 +1,21 @@
+{{- if eq .Values.workloadType "DaemonSet" }}
+apiVersion: apps/v1
+kind: DaemonSet
+{{ include "helm-blueprint.metadata" (dict "context" $ "workload" true "syncWaveDefault" "0") }}
+spec:
+  {{- with .Values.workloads.daemonSet.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.workloads.daemonSet.minReadySeconds }}
+  minReadySeconds: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.daemonSet.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm-blueprint.selectorLabels" . | nindent 6 }}
+  template:
+    {{- include "helm-blueprint.podTemplate" . | nindent 4 }}
+{{- end }}

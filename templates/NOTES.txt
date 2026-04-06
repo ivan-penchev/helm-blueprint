@@ -1,0 +1,105 @@
+{{- $fullName := include "helm-blueprint.fullname" . -}}
+{{- $ns := .Release.Namespace -}}
+
+=== {{ $fullName }} ===
+
+Workload: {{ .Values.workloadType }}
+{{- if eq .Values.workloadType "CronJob" }}
+Schedule: {{ .Values.workloads.cronJob.schedule }}
+{{- end }}
+{{- if or .Values.autoscaling.hpa.enabled .Values.autoscaling.keda.enabled }}
+{{- if .Values.autoscaling.hpa.enabled }}
+Autoscaling: HPA ({{ .Values.autoscaling.hpa.minReplicas }}-{{ .Values.autoscaling.hpa.maxReplicas }} replicas)
+{{- else }}
+Autoscaling: KEDA ({{ .Values.autoscaling.keda.minReplicaCount }}-{{ .Values.autoscaling.keda.maxReplicaCount }} replicas)
+{{- end }}
+{{- end }}
+{{- if .Values.autoscaling.vpa.enabled }}
+VPA: enabled
+{{- end }}
+
+{{- $svcCount := 0 }}
+{{- range $name, $svc := .Values.networking.services }}{{ if $svc }}{{ $svcCount = add1 $svcCount }}{{ end }}{{ end }}
+{{- if gt $svcCount 0 }}
+
+Services:
+{{- range $name, $svc := .Values.networking.services }}
+{{- if $svc }}
+  {{ $fullName }}-{{ $name }} ({{ default "ClusterIP" $svc.type }})
+  {{- range $portName, $portCfg := $svc.ports }}
+    - {{ $portName }}:{{ $portCfg.port }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- $ingCount := 0 }}
+{{- range $name, $ing := .Values.networking.ingresses }}{{ if $ing }}{{ $ingCount = add1 $ingCount }}{{ end }}{{ end }}
+{{- if gt $ingCount 0 }}
+
+Ingresses:
+{{- range $name, $ing := .Values.networking.ingresses }}
+{{- if $ing }}
+  {{ $fullName }}-{{ $name }}:
+  {{- range $ing.hosts }}
+    - {{ .host }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- $routeCount := 0 }}
+{{- range $name, $route := .Values.networking.gatewayApi.routes }}{{ if $route }}{{ $routeCount = add1 $routeCount }}{{ end }}{{ end }}
+{{- if gt $routeCount 0 }}
+
+Gateway API Routes:
+{{- range $name, $route := .Values.networking.gatewayApi.routes }}
+{{- if $route }}
+  {{ $fullName }}-{{ $name }} ({{ default "HTTPRoute" $route.kind }})
+  {{- with $route.hostnames }}
+    {{- range . }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- $certCount := 0 }}
+{{- range $name, $cert := .Values.config.certificates }}{{ if $cert }}{{ $certCount = add1 $certCount }}{{ end }}{{ end }}
+{{- if gt $certCount 0 }}
+
+Certificates:
+{{- range $name, $cert := .Values.config.certificates }}
+{{- if $cert }}
+  {{ $fullName }}-{{ $name }} -> {{ default (printf "%s-%s-tls" $fullName $name) $cert.secretName }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- $hookCount := 0 }}
+{{- range $name, $hook := .Values.hooks }}{{ if $hook }}{{ $hookCount = add1 $hookCount }}{{ end }}{{ end }}
+{{- if gt $hookCount 0 }}
+
+Hooks:
+{{- range $name, $hook := .Values.hooks }}
+{{- if $hook }}
+  {{ $fullName }}-hook-{{ $name }} [{{ $hook.events | join ", " }}]
+  {{- with $hook.weight }} weight={{ . }}{{ end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if and (ne .Values.workloadType "CronJob") (ne .Values.workloadType "Job") }}
+
+Get pods:
+  kubectl get pods -n {{ $ns }} -l "app.kubernetes.io/name={{ include "helm-blueprint.name" . }},app.kubernetes.io/instance={{ .Release.Name }}"
+{{- else if eq .Values.workloadType "CronJob" }}
+
+View upcoming jobs:
+  kubectl get cronjobs -n {{ $ns }} {{ $fullName }}
+{{- else }}
+
+View job status:
+  kubectl get jobs -n {{ $ns }} {{ $fullName }}
+{{- end }}

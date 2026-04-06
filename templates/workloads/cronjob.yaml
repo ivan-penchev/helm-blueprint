@@ -1,0 +1,30 @@
+{{- if eq .Values.workloadType "CronJob" }}
+apiVersion: batch/v1
+kind: CronJob
+{{ include "helm-blueprint.metadata" (dict "context" $ "workload" true "syncWaveDefault" "0") }}
+spec:
+  schedule: {{ default "0 * * * *" .Values.workloads.cronJob.schedule | quote }}
+  {{- with .Values.workloads.cronJob.timeZone }}
+  timeZone: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.workloads.cronJob.concurrencyPolicy }}
+  concurrencyPolicy: {{ . }}
+  {{- end }}
+  {{- if not (kindIs "invalid" .Values.workloads.cronJob.suspend) }}
+  suspend: {{ .Values.workloads.cronJob.suspend }}
+  {{- end }}
+  {{- with .Values.workloads.cronJob.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.cronJob.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.cronJob.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ . }}
+  {{- end }}
+  jobTemplate:
+    spec:
+      {{- include "helm-blueprint.workloads.jobSpec" . | nindent 6 }}
+      template:
+        {{- include "helm-blueprint.podTemplate" . | nindent 8 }}
+{{- end }}

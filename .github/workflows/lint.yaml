@@ -1,0 +1,70 @@
+name: Lint & Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Helm lint (default values)
+        run: helm lint .
+
+      - name: Helm lint (all CI value files)
+        run: |
+          for f in ci/*.yaml; do
+            echo "--- Linting with $f ---"
+            helm lint . --values "$f"
+          done
+
+      - name: Helm template (all CI value files)
+        run: |
+          for f in ci/*.yaml; do
+            echo "--- Templating with $f ---"
+            helm template test . --values "$f" > /dev/null
+          done
+
+  unittest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Install helm-unittest
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --verify=false
+
+      - name: Run unit tests
+        run: helm unittest .
+
+  kubeconform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin
+
+      - name: Validate rendered manifests
+        run: |
+          for f in ci/*.yaml; do
+            echo "--- Validating with $f ---"
+            helm template test . --values "$f" \
+              | kubeconform -summary \
+                -skip ExternalSecret,PushSecret,Password,BackendTrafficPolicy,HTTPRoute,GRPCRoute,TLSRoute,TCPRoute,UDPRoute,ScaledObject,ScaledJob,Rollout,VirtualService,DestinationRule,PeerAuthentication,AuthorizationPolicy,VerticalPodAutoscaler,Certificate \
+                -kubernetes-version 1.35.0
+          done

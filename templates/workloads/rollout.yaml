@@ -1,0 +1,31 @@
+{{- if eq .Values.workloadType "Rollout" }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+{{ include "helm-blueprint.metadata" (dict "context" $ "workload" true "syncWaveDefault" "0") }}
+spec:
+  {{- if not (or .Values.autoscaling.hpa.enabled .Values.autoscaling.keda.enabled) }}
+  replicas: {{ if kindIs "invalid" .Values.workloads.rollout.replicaCount }}1{{ else }}{{ .Values.workloads.rollout.replicaCount }}{{ end }}
+  {{- end }}
+  {{- with .Values.workloads.rollout.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.workloads.rollout.minReadySeconds }}
+  minReadySeconds: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.rollout.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.rollout.restartAt }}
+  restartAt: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.rollout.analysis }}
+  analysis:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm-blueprint.selectorLabels" . | nindent 6 }}
+  template:
+    {{- include "helm-blueprint.podTemplate" . | nindent 4 }}
+{{- end }}

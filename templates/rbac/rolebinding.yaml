@@ -1,0 +1,18 @@
+{{- range $name, $binding := .Values.rbac.roleBindings }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+{{ include "helm-blueprint.metadata" (dict "name" (printf "%s-%s" (include "helm-blueprint.fullname" $) $name) "context" $ "extraAnnotations" $binding.annotations "extraLabels" $binding.labels "syncWaveDefault" "-3" "syncWave" $binding.syncWave) }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: {{ default "Role" $binding.roleRef.kind }}
+  name: {{ printf "%s-%s" (include "helm-blueprint.fullname" $) $binding.roleRef.name }}
+subjects:
+  {{- if $binding.subjects }}
+  {{- toYaml $binding.subjects | nindent 2 }}
+  {{- else }}
+  - kind: ServiceAccount
+    name: {{ include "helm-blueprint.rbac.serviceAccountName" $ }}
+    namespace: {{ $.Release.Namespace }}
+  {{- end }}
+{{- end }}

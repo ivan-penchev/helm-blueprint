@@ -1,0 +1,25 @@
+{{- include "helm-blueprint.validate" . -}}
+{{- if eq .Values.workloadType "Deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+{{ include "helm-blueprint.metadata" (dict "context" $ "workload" true "syncWaveDefault" "0") }}
+spec:
+  {{- if not (or .Values.autoscaling.hpa.enabled .Values.autoscaling.keda.enabled) }}
+  replicas: {{ if kindIs "invalid" .Values.workloads.deployment.replicaCount }}1{{ else }}{{ .Values.workloads.deployment.replicaCount }}{{ end }}
+  {{- end }}
+  {{- with .Values.workloads.deployment.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.workloads.deployment.minReadySeconds }}
+  minReadySeconds: {{ . }}
+  {{- end }}
+  {{- with .Values.workloads.deployment.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "helm-blueprint.selectorLabels" . | nindent 6 }}
+  template:
+    {{- include "helm-blueprint.podTemplate" . | nindent 4 }}
+{{- end }}

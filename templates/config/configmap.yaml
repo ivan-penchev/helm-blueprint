@@ -1,0 +1,16 @@
+{{- range $name, $config := .Values.config.configMaps }}
+{{- if $config }}
+---
+apiVersion: v1
+kind: ConfigMap
+{{ include "helm-blueprint.metadata" (dict "name" (printf "%s-%s" (include "helm-blueprint.fullname" $) $name) "context" $ "extraAnnotations" $config.annotations "extraLabels" $config.labels "syncWaveDefault" "-5" "syncWave" $config.syncWave) }}
+{{- with $config.data }}
+data:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- with $config.binaryData }}
+binaryData:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}
