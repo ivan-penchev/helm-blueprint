@@ -65,6 +65,6 @@ jobs:
             echo "--- Validating with $f ---"
             helm template test . --values "$f" \
               | kubeconform -summary \
-                -skip ExternalSecret,Password,BackendTrafficPolicy,HTTPRoute,GRPCRoute,TLSRoute,TCPRoute,UDPRoute,ScaledObject,ScaledJob,Rollout,VirtualService,DestinationRule,PeerAuthentication,AuthorizationPolicy,VerticalPodAutoscaler,Certificate \
+                -skip ExternalSecret,PushSecret,Password,BackendTrafficPolicy,HTTPRoute,GRPCRoute,TLSRoute,TCPRoute,UDPRoute,ScaledObject,ScaledJob,Rollout,VirtualService,DestinationRule,PeerAuthentication,AuthorizationPolicy,VerticalPodAutoscaler,Certificate \
                 -kubernetes-version 1.35.0
           done
