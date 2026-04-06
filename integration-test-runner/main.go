@@ -32,7 +32,7 @@ func run() int {
 		return 1
 	}
 
-	logging.Step("Running integration tests (testify suite)...")
+	logging.Step("Running integration tests (testify suite)....")
 	if err := testrun.Execute(repoRoot, opts); err != nil {
 		logging.Error(err.Error())
 		if ee, ok := err.(*testrun.ExitError); ok {
