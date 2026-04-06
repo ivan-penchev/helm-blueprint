@@ -42,7 +42,7 @@ func main() {
 
 func executeE2ETestsFolder(repoRoot string, opts cli.Options) error {
 	ctx := context.Background()
-	moduleRoot := filepath.Join(repoRoot, "integration-test-runner")
+	moduleRoot := filepath.Join(repoRoot, "integration-tests-runner")
 
 	args := []string{"test", "./e2e", "-v", "-count=1"}
 	args = append(args, opts.ExtraArgs...)
