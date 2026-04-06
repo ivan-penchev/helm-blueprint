@@ -51,6 +51,6 @@ Supported flags:
 Unknown flags/args are forwarded to go test for [integration-test-runner/e2e](integration-test-runner/e2e).
 
 Each testcase uses its own namespace (`<namespace-prefix>-<test>-<suffix>`), which enables parallel-safe isolation.
-Cases run in parallel (bounded by `--max-parallel`, default `4`).
+Cases run in parallel (bounded by `--max-parallel`, default `10`).
 
 If your machine does not have `gcc`, run direct `go test` commands with `CGO_ENABLED=0`.

@@ -34,28 +34,3 @@ jobs:
         working-directory: integration-test-runner
         run: |
           go run . --namespace-prefix hb-it
-
-      - name: Debug on failure
-        if: failure()
-        run: |
-          echo "=== Namespaces used by tests ==="
-          kubectl get ns -o name 2>/dev/null | grep '^namespace/hb-it-' || true
-
-          for ns in $(kubectl get ns -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null | grep '^hb-it-'); do
-            echo "=== Events in $ns ==="
-            kubectl get events -n "$ns" --sort-by='.lastTimestamp' 2>/dev/null || true
-            echo "=== Resources in $ns ==="
-            kubectl get all -n "$ns" 2>/dev/null || true
-            echo ""
-          done
-
-          echo ""
-          echo "=== All resources ==="
-          kubectl get all -A 2>/dev/null || true
-          echo ""
-          echo "=== Failed pods ==="
-          kubectl get pods -A --field-selector=status.phase!=Running,status.phase!=Succeeded 2>/dev/null | while read -r ns name rest; do
-            [ "$ns" = "NAMESPACE" ] && continue
-            echo "--- Describing $ns/$name ---"
-            kubectl describe pod "$name" -n "$ns" 2>/dev/null || true
-          done

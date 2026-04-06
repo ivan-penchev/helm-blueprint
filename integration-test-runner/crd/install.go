@@ -15,11 +15,11 @@ type manifest struct {
 
 var manifests = []manifest{
 	{URL: "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml"},
-	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/stable/manifests/crds/rollout-crd.yaml"},
-	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/stable/manifests/crds/experiment-crd.yaml"},
-	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/stable/manifests/crds/analysis-run-crd.yaml"},
-	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/stable/manifests/crds/analysis-template-crd.yaml"},
-	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/stable/manifests/crds/cluster-analysis-template-crd.yaml"},
+	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/refs/tags/v1.9.0/manifests/crds/rollout-crd.yaml"},
+	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/refs/tags/v1.9.0/manifests/crds/experiment-crd.yaml"},
+	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/refs/tags/v1.9.0/manifests/crds/analysis-run-crd.yaml"},
+	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/refs/tags/v1.9.0/manifests/crds/analysis-template-crd.yaml"},
+	{URL: "https://raw.githubusercontent.com/argoproj/argo-rollouts/refs/tags/v1.9.0/manifests/crds/cluster-analysis-template-crd.yaml"},
 	{URL: "https://github.com/kedacore/keda/releases/download/v2.19.0/keda-2.19.0-crds.yaml", ServerSide: true},
 	{URL: "https://raw.githubusercontent.com/external-secrets/external-secrets/v2.2.0/deploy/crds/bundle.yaml", ServerSide: true},
 	{URL: "https://github.com/envoyproxy/gateway/releases/download/v1.7.1/envoy-gateway-crds.yaml", ServerSide: true},

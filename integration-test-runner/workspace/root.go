@@ -20,7 +20,7 @@ func FindRepoRoot() (string, error) {
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", fmt.Errorf("could not find repository root (expected Chart.yaml and ci/)")
+			return "", fmt.Errorf("could not find repository root (expected Chart.yaml, values.yaml, and ci/)")
 		}
 		dir = parent
 	}

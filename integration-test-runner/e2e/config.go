@@ -19,7 +19,7 @@ func LoadConfig() Config {
 	return Config{
 		ClusterName:     getEnvOrDefault("ITR_CLUSTER_NAME", "helm-blueprint-test"),
 		NamespacePrefix: getEnvOrDefault("ITR_NAMESPACE_PREFIX", "hb-it"),
-		MaxParallel:     envInt("ITR_MAX_PARALLEL", 4),
+		MaxParallel:     envInt("ITR_MAX_PARALLEL", 10),
 		KeepCluster:     envBool("ITR_KEEP_CLUSTER", false),
 		RepoRoot:        os.Getenv("ITR_REPO_ROOT"),
 	}
