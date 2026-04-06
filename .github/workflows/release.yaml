@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+
+      - name: Install semantic-release plugins
+        run: |
+          npm install -g \
+            semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/github \
+            @semantic-release/exec \
+            @semantic-release/git \
+            conventional-changelog-conventionalcommits
+
+      - name: Run semantic-release
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release
+          # After semantic-release, check if Chart.yaml was actually updated
+          VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
+          # Check if a GitHub release exists for this version
+          if gh release view "v${VERSION}" --json tagName >/dev/null 2>&1; then
+            echo "new_release=true" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "New release: v${VERSION}"
+          else
+            echo "new_release=false" >> "$GITHUB_OUTPUT"
+            echo "No new release created"
+          fi
+
+      # Publish Helm package to GitHub Releases
+      - name: Package Helm chart
+        if: steps.release.outputs.new_release == 'true'
+        run: helm package . --version ${{ steps.release.outputs.version }}
+
+      - name: Upload chart to GitHub Release
+        if: steps.release.outputs.new_release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${{ steps.release.outputs.version }}" \
+            helm-blueprint-${{ steps.release.outputs.version }}.tgz \
+            --clobber
+
+      # Publish OCI chart to GitHub Container Registry
+      - name: Login to GHCR
+        if: steps.release.outputs.new_release == 'true'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push OCI chart to GHCR
+        if: steps.release.outputs.new_release == 'true'
+        run: |
+          helm push helm-blueprint-${{ steps.release.outputs.version }}.tgz \
+            oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Install cosign
+        if: steps.release.outputs.new_release == 'true'
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign OCI chart with cosign
+        if: steps.release.outputs.new_release == 'true'
+        env:
+          COSIGN_REGISTRY_USERNAME: ${{ github.actor }}
+          COSIGN_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cosign sign --yes \
+            ghcr.io/${{ github.repository_owner }}/charts/helm-blueprint:${{ steps.release.outputs.version }}
