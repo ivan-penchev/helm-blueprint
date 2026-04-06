@@ -17,6 +17,7 @@ config:
         - app.example.com
         - www.example.com
 
+networking:
   ingresses:
     public:
       className: nginx

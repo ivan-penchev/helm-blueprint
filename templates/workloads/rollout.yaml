@@ -1,4 +1,3 @@
-{{- include "helm-blueprint.validate" . -}}
 {{- if eq .Values.workloadType "Rollout" }}
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout

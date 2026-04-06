@@ -2,7 +2,7 @@
 
 ## Horizontal Pod Autoscaler
 
-Uses the [autoscaling/v2 API](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizontal-pod-autoscaler-v2/). Only applies to Deployment and StatefulSet workloads.
+Uses the [autoscaling/v2 API](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/horizontal-pod-autoscaler-v2/). Applies to Deployment, StatefulSet, and Rollout workloads.
 
 ```yaml
 autoscaling:
