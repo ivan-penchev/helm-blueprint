@@ -14,15 +14,30 @@ func FindRepoRoot() (string, error) {
 
 	dir := start
 	for {
-		target := filepath.Join(dir, "ci", "kind", "test.sh")
-		if st, err := os.Stat(target); err == nil && !st.IsDir() {
+		if isHelmBlueprintRoot(dir) {
 			return dir, nil
 		}
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", fmt.Errorf("could not find repository root (expected ci/kind/test.sh)")
+			return "", fmt.Errorf("could not find repository root (expected Chart.yaml and ci/)")
 		}
 		dir = parent
 	}
+}
+
+func isHelmBlueprintRoot(dir string) bool {
+	return fileExists(filepath.Join(dir, "Chart.yaml")) &&
+		fileExists(filepath.Join(dir, "values.yaml")) &&
+		dirExists(filepath.Join(dir, "ci"))
+}
+
+func fileExists(path string) bool {
+	st, err := os.Stat(path)
+	return err == nil && !st.IsDir()
+}
+
+func dirExists(path string) bool {
+	st, err := os.Stat(path)
+	return err == nil && st.IsDir()
 }
