@@ -17,11 +17,11 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version-file: integration-test-runner/go.mod
+          go-version-file: integration-tests-runner/go.mod
           cache: true
           cache-dependency-path: |
-            integration-test-runner/go.sum
-            integration-test-runner/go.mod
+            integration-tests-runner/go.sum
+            integration-tests-runner/go.mod
 
       - name: Setup Helm
         uses: azure/setup-helm@v5
@@ -31,6 +31,6 @@ jobs:
         with:
           install_only: true
       - name: Run integration tests
-        working-directory: integration-test-runner
+        working-directory: integration-tests-runner
         run: |
           go run . --namespace-prefix hb-it
