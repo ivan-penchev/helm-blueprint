@@ -17,7 +17,7 @@ func Parse(args []string) (Options, error) {
 	opts := Options{
 		ClusterName: "helm-blueprint-test",
 		NamespacePrefix: "hb-it",
-		MaxParallel: 4,
+		MaxParallel: 10,
 	}
 
 	for i := 0; i < len(args); i++ {
